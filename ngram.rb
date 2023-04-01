@@ -3,8 +3,8 @@
 require 'yaml'
 
 TOKEN_PATTERN = /
-     ([A-Za-z']+) # words
-    | ([.,:!?]) # punctuation
+       ([A-Za-z']+) # words
+     | ([.,!?]) # punctuation
     /x
 
 def tokenize(string)
@@ -19,9 +19,21 @@ def ngrams(n, tokens)
 end
 
 def normalize_tallies(tallies)
-  max = tallies.values.max
-  tallies.transform_values do |val|
-    val.to_f / max
+  sum = tallies.reduce(0) do |s, (_, weight)|
+    s + weight
+  end
+  tallies.transform_values do |weight|
+    weight / sum.to_f
+  end
+end
+
+def normalize_weights(tree)
+  tree.reduce({}) do |h, (k, v)|
+    if v.is_a?(Hash) && v.first[1].is_a?(Numeric)
+      h.merge!(k => normalize_tallies(v))
+    else
+      h.merge!(k => normalize_weights(v))
+    end
   end
 end
 
@@ -55,13 +67,20 @@ def generate_tree(tallies)
   end
 end
 
-def MAIN(file)
-  puts generate_tree(normalize_tallies(ngrams(2, tokenize(IO.read(file))).tally)).to_yaml
+def build_ngram_tree(size, file)
+  normalize_weights(generate_tree(ngrams(size, tokenize(IO.read(file))).tally))
 end
 
-if ARGV.count < 1
-  puts "Usage: #{$PROGRAM_NAME} FILE"
-  exit 1
+def MAIN(file, n = nil)
+  size = (n || 3).to_i
+  puts build_ngram_tree(size, file).to_yaml
 end
 
-MAIN(ARGV[0])
+if $PROGRAM_NAME == __FILE__
+  if ARGV.count < 1
+    puts "Usage: #{$PROGRAM_NAME} FILE"
+    exit 1
+  end
+
+  MAIN(ARGV[0], ARGV[1])
+end

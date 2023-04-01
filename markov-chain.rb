@@ -6,7 +6,43 @@ def read_model(file_name)
   YAML.load(IO.read(file_name))
 end
 
-model = read_model(ARGV[0])
+def trigrams
+  @trigrams ||= read_model('kjv-trigrams.yaml')
+end
 
-first_token = model.keys.grep(/^[A-Z]/).sample
-model[first_token]
+def bigrams
+  @bigrams ||= read_model('kjv-bigrams.yaml')
+end
+
+def next_token(index)
+  target = rand
+  index.each do |token, weight|
+    return token if target <= weight
+
+    target -= weight
+  end
+end
+
+def next_phrase(seed)
+  one = next_token(bigrams[seed])
+  two = next_token(trigrams.dig(seed, one))
+  three = next_token(trigrams.dig(one, two))
+
+  [one, two, three]
+end
+
+def sentence(first = nil, periods = 0)
+  seed = first || bigrams.keys.sample
+  phrase = next_phrase(seed)
+  return phrase if periods == 3
+
+  periods += 1 if phrase.include?('.')
+
+  if periods.zero?
+    [seed, phrase, sentence(phrase.last, periods)].flatten
+  else
+    [phrase, sentence(phrase.last, periods)].flatten
+  end
+end
+
+puts sentence(ARGV[0]).join(' ') if $PROGRAM_NAME == __FILE__
