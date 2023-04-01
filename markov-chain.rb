@@ -7,11 +7,11 @@ def read_model(file_name)
 end
 
 def trigrams
-  @trigrams ||= read_model('kjv-trigrams.yaml')
+  @trigrams ||= read_model('moby-dick-trigrams.yaml')
 end
 
 def bigrams
-  @bigrams ||= read_model('kjv-bigrams.yaml')
+  @bigrams ||= read_model('moby-dick-bigrams.yaml')
 end
 
 def next_token(index)
@@ -32,7 +32,7 @@ def next_phrase(seed)
 end
 
 def sentence(first = nil, periods = 0)
-  seed = first || bigrams.keys.sample
+  seed = first || bigrams.keys.grep(/^[A-Z]/).sample
   phrase = next_phrase(seed)
   return phrase if periods == 3
 
