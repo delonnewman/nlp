@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# Port over https://github.com/python/cpython/blob/main/Lib/random.py#LL454C13-L454C13
+# https://www.geeksforgeeks.org/how-to-get-weighted-random-choice-in-python/
+
 require 'yaml'
 
 def read_model(file_name)
